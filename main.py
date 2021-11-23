@@ -38,7 +38,7 @@ try:
     # Initialise the PID controller - we use a third party library for this
     pid_controller = PID.PID(Kp, Ki, Kd)
     pid_controller.SetPoint = DESIRED_DISTANCE
-    pid_controller.setSampleTime(0.1)
+    pid_controller.setSampleTime(SAMPLING_TIME)
 
 except IOError as error:
     print("The GoPiGo Robot or its Distance Sensor was not detected")
