@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="885608b2-7f10-4184-8a94-1a5c72dd9d02" name="gopigo" url="http://134.103.201.93">
+        <fileTransfer rootFolder="/home/pi/Desktop/BTgopigo" accessType="SFTP" host="134.103.206.222" port="22" sshConfigId="6d2a8c1c-02bf-4e0c-9f65-b0dc153eb3e3" sshConfig="pi@134.103.206.222:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
