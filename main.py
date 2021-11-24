@@ -9,6 +9,7 @@ from classes import *
 from helper_functions import *
 from constants import *
 import PID
+import matplotlib.pyplot as plt
 
 try:
     # Initialise the EasyGoPiGo3 instance and reset all parameters
@@ -28,8 +29,8 @@ try:
     else:
         print(" Current GoPiGo battery voltage is:  %0.02fV" % (gpg.volt()))
 
-    # Set the current control paradigm the GoPiGo will use on startup
-    current_control_paradigm = ControlParadigm.MODE_FREE_ROAMING
+    # Set the current control method the GoPiGo will use on startup
+    current_control_method = ControlMethod.MODE_FREE_ROAMING
 
     # Initialise the client-server connection
     server = Server()
@@ -83,6 +84,7 @@ def server_listen():
     """
     while robot_loop:
         message = server.receive_message()
+        #print(message)
         process_user_commands(message)
 
 def distance_scanner():
@@ -120,12 +122,12 @@ def robot_logic():
     """
     robot_logic is a function that runs the main thread that controls the GoPiGo3 robot. This thread communicates with
         the other threads and share resources by setting and clearing events. The robot has four major control
-        paradigms, namely: following the left wall using a PID controller, following the right wall using a PID
+        methods, namely: following the left wall using a PID controller, following the right wall using a PID
         controller, roaming freely and avoiding obstacles, and manual user control from the GUI client.
 
     :return: None
     """
-    global robot_loop, robot_reset, robot_initial_set, gpg, servo, distance_sensor, current_control_paradigm
+    global robot_loop, robot_reset, robot_initial_set, gpg, servo, distance_sensor, current_control_method
     global sensor_event, loop_counter
     global change_cp_user_control, change_cp_left_wall, change_cp_right_wall, change_cp_free_roaming
     global robot_move_forward, robot_move_left, robot_move_back, robot_move_right, robot_stop
@@ -141,19 +143,19 @@ def robot_logic():
 
         # Check input commands for GUI
         if change_cp_left_wall.isSet():
-            current_control_paradigm = ControlParadigm.MODE_FOLLOW_LEFT_WALL
+            current_control_method = ControlMethod.MODE_FOLLOW_LEFT_WALL
             robot_reset = True
             change_cp_left_wall.clear()
         elif change_cp_right_wall.isSet():
-            current_control_paradigm = ControlParadigm.MODE_FOLLOW_RIGHT_WALL
+            current_control_method = ControlMethod.MODE_FOLLOW_RIGHT_WALL
             robot_reset = True
             change_cp_right_wall.clear()
         elif change_cp_user_control.isSet():
-            current_control_paradigm = ControlParadigm.MODE_USER_CONTROL
+            current_control_method = ControlMethod.MODE_USER_CONTROL
             robot_reset = True
             change_cp_user_control.clear()
         elif change_cp_free_roaming.isSet():
-            current_control_paradigm = ControlParadigm.MODE_FREE_ROAMING
+            current_control_method = ControlMethod.MODE_FREE_ROAMING
             robot_reset = True
             change_cp_free_roaming.clear()
 
@@ -167,7 +169,7 @@ def robot_logic():
 
         # Check if initial startup and run initialisation code
         if robot_initial_set:
-            setup_bot(gpg, servo, current_control_paradigm)
+            setup_bot(gpg, servo, current_control_method)
             sensor_event.clear()
             found_left_wall = False
             found_right_wall = False
@@ -175,7 +177,7 @@ def robot_logic():
 
         # Check if robot was reset and run initialisation code
         if robot_reset:
-            setup_bot(gpg, servo, current_control_paradigm)
+            setup_bot(gpg, servo, current_control_method)
             robot_start.set()
             servo_roaming.set()
             sensor_event.clear()
@@ -184,12 +186,12 @@ def robot_logic():
             robot_reset = False
 
         # Check if robot was started by GUI
-        if robot_start.isSet() and current_control_paradigm != ControlParadigm.MODE_USER_CONTROL:
+        if robot_start.isSet() and current_control_method != ControlMethod.MODE_USER_CONTROL:
             gpg.set_speed(ROBOT_SPEED)
             gpg.forward()
             servo_roaming.set()
             robot_start.clear()
-        elif current_control_paradigm == ControlParadigm.MODE_USER_CONTROL:
+        elif current_control_method == ControlMethod.MODE_USER_CONTROL:
             # Separate if condition to ensure that robot does not move spontaneously when user control is selected
             gpg.set_speed(ROBOT_SPEED)
             servo_roaming.set()
@@ -204,17 +206,17 @@ def robot_logic():
             servo_roaming.clear()
             robot_stop.clear()
 
-        # If the current control paradigm is free roaming then the robot moves until the distance sensor is triggered,
+        # If the current control method is free roaming then the robot moves until the distance sensor is triggered,
         # then the robot stops, scans its surroundings and moves in the direction with the most open space
-        if current_control_paradigm == ControlParadigm.MODE_FREE_ROAMING:
+        if current_control_method == ControlMethod.MODE_FREE_ROAMING:
             if sensor_event.isSet():
                 avoid_obstacle(gpg, distance_sensor, servo)
                 time.sleep(SHORT_WAIT_TIME)
                 sensor_event.clear()
 
-        # If the current control paradigm is to follow the left wall then the robot moves until the distance sensor is
+        # If the current control method is to follow the left wall then the robot moves until the distance sensor is
         # triggered, then the robot stops and uses a PID controller to follow the wall
-        if current_control_paradigm == ControlParadigm.MODE_FOLLOW_LEFT_WALL:
+        if current_control_method == ControlMethod.MODE_FOLLOW_LEFT_WALL:
             if not found_left_wall and sensor_event.isSet():
                 servo_left.set()
                 servo_roaming.clear()
@@ -222,7 +224,9 @@ def robot_logic():
                 sensor_event.clear()
                 time.sleep(SHORT_WAIT_TIME)
             elif found_left_wall and sensor_event.isSet():
-                correction = pid_controller_update(distance_sensor, pid_controller, gpg, is_right=False)
+
+                distance = distance_sensor.read_mm()
+                correction = pid_controller_update(distance, pid_controller, gpg, is_right=False)
 
                 # The control system has moved out of its stable locus as contact has been lost with the wall
                 if correction > THRESHOLD or correction < -THRESHOLD:
@@ -230,12 +234,12 @@ def robot_logic():
                     found_left_wall = False
                     servo_roaming.set()
                     gpg.forward()
-                    current_control_paradigm = ControlParadigm.MODE_FREE_ROAMING
+                    current_control_method = ControlMethod.MODE_FREE_ROAMING
                 time.sleep(SHORT_WAIT_TIME)
 
-        # If the current control paradigm is to follow the right wall then the robot moves until the distance sensor is
+        # If the current control method is to follow the right wall then the robot moves until the distance sensor is
         # triggered, then the robot stops and uses a PID controller to follow the wall
-        if current_control_paradigm == ControlParadigm.MODE_FOLLOW_RIGHT_WALL:
+        if current_control_method == ControlMethod.MODE_FOLLOW_RIGHT_WALL:
             if not found_right_wall and sensor_event.isSet():
                 servo_right.set()
                 servo_roaming.clear()
@@ -243,7 +247,8 @@ def robot_logic():
                 sensor_event.clear()
                 time.sleep(SHORT_WAIT_TIME)
             elif found_right_wall and sensor_event.isSet():
-                correction = pid_controller_update(distance_sensor, pid_controller, gpg, is_right=True)
+                distance = distance_sensor.read_mm()
+                correction = pid_controller_update(distance, pid_controller, gpg, is_right=True)
 
                 # The control system has moved out of its stable locus as contact has been lost with the wall
                 if correction > THRESHOLD or correction < -THRESHOLD:
@@ -251,11 +256,11 @@ def robot_logic():
                     found_right_wall = False
                     servo_roaming.set()
                     gpg.forward()
-                    current_control_paradigm = ControlParadigm.MODE_FREE_ROAMING
+                    current_control_method = ControlMethod.MODE_FREE_ROAMING
                 time.sleep(SHORT_WAIT_TIME)
 
-        # If the current control paradigm is to user input then the robot moves as instructed by the user
-        elif current_control_paradigm == ControlParadigm.MODE_USER_CONTROL:
+        # If the current control method is to user input then the robot moves as instructed by the user
+        elif current_control_method == ControlMethod.MODE_USER_CONTROL:
             if robot_move_left.isSet():
                 gpg.stop()
                 gpg.turn_degrees(-TURN_DEGREES)

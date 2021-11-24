@@ -4,32 +4,32 @@ import time
 
 def setup_bot(gpg, servo, *args):
     """
-    setup_bot sets up the GoPiGo3 based on the control paradigm, if the control paradigm is not specified in the
+    setup_bot sets up the GoPiGo3 based on the control method, if the control method is not specified in the
     optional argument, then it resets the GoPiGo3 by resetting it, stopping it, setting its speed to the default value
     and resetting the servo motor.
 
     :param gpg: The GoPiGo3 instance
     :param servo: The servo motor instance
-    :param args: Optional argument storing the current control paradigm
+    :param args: Optional argument storing the current control method
     :return: None
     """
     try:
-        current_control_paradigm = args[0]
+        current_control_method = args[0]
     except:
-        current_control_paradigm = None
+        current_control_method = None
 
-    if current_control_paradigm == ControlParadigm.MODE_FREE_ROAMING:
+    if current_control_method == ControlMethod.MODE_FREE_ROAMING:
         gpg.set_speed(ROBOT_SPEED)
         servo.rotate_servo(ANGLE_STRAIGHT_AHEAD)
-    elif current_control_paradigm == ControlParadigm.MODE_FOLLOW_LEFT_WALL:
+    elif current_control_method == ControlMethod.MODE_FOLLOW_LEFT_WALL:
         gpg.turn_degrees(-TURN_DEGREES)
         time.sleep(SHORT_WAIT_TIME)
         servo.rotate_servo(ANGLE_STRAIGHT_AHEAD)
-    elif current_control_paradigm == ControlParadigm.MODE_FOLLOW_RIGHT_WALL:
+    elif current_control_method == ControlMethod.MODE_FOLLOW_RIGHT_WALL:
         gpg.turn_degrees(TURN_DEGREES)
         time.sleep(SHORT_WAIT_TIME)
         servo.rotate_servo(ANGLE_STRAIGHT_AHEAD)
-    elif current_control_paradigm == ControlParadigm.MODE_USER_CONTROL:
+    elif current_control_method == ControlMethod.MODE_USER_CONTROL:
         gpg.set_speed(ROBOT_SPEED)
         servo.rotate_servo(ANGLE_STRAIGHT_AHEAD)
     else:
@@ -97,7 +97,7 @@ def avoid_obstacle(gpg, distance_sensor, servo):
     gpg.forward()
 
 
-def pid_controller_update(distance_sensor, pid_controller, gpg, is_right):
+def pid_controller_update(distance, pid_controller, gpg, is_right):
     """
     pid_controller_update performs a single update of the PID controller when following a wall. Whether the PID
     controller should update for following the left or right wall is specified in the is_right argument. The PID
@@ -105,7 +105,7 @@ def pid_controller_update(distance_sensor, pid_controller, gpg, is_right):
     subtracted from the speed of the left motor and added to the speed of the right motor (when following the left
     wall), and vice versa for when the robot is following the right wall.
 
-    :param distance_sensor: The distance sensor instance
+    :param distance: The distance sensor reading in mm
     :param pid_controller: The PID object instance
     :param gpg: The GoPiGo3 robot instance
     :param is_right: Boolean argument specifying if the robot should follow the right wall
@@ -115,8 +115,6 @@ def pid_controller_update(distance_sensor, pid_controller, gpg, is_right):
     factor = 1
     if is_right:
         factor = -1
-
-    distance = distance_sensor.read_mm()
 
     pid_controller.update(distance)
     correction = pid_controller.output

@@ -6,6 +6,5 @@
     </content>
     <orderEntry type="jdk" jdkName="Remote Python 2.7.13 (sftp://pi@134.103.206.222:22/usr/bin/python) (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="ICTS_GOPIGO_GUI" />
   </component>
 </module>

@@ -2,9 +2,9 @@ from enum import Enum
 from socket import *
 from constants import *
 
-class ControlParadigm(Enum):
+class ControlMethod(Enum):
     """
-    Enum that stores the different control paradigm options
+    Enum that stores the different control method options
     """
     MODE_FREE_ROAMING = 0
     MODE_FOLLOW_LEFT_WALL = 1
