@@ -251,7 +251,7 @@ def robot_logic():
 
                 # The control system has moved out of its stable locus as contact has been lost with the wall
                 if correction > THRESHOLD or correction < -THRESHOLD:
-                    # Move to initial condition where the robot roams and tries to find the left wall
+                    # Move to initial condition where the robot roams and tries to find the right wall
                     found_right_wall = False
                     servo_roaming.set()
                     gpg.forward()
