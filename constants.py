@@ -17,7 +17,8 @@ MINIMUM_BATTERY_VOLTAGE = 9
 VELOCITY_GRADIENT = (MAX_VELOCITY- MIN_VELOCITY)/(MAX_DISTANCE-MIN_DISTANCE)
 VELOCITY_CONSTANT = MAX_VELOCITY - VELOCITY_GRADIENT*MAX_DISTANCE
 
-# Initialise the PID controller 0.4, 0.1, 0.3 was perfect
+# Initialise the PID controller constants
+# Tuning method explained in the slides
 Kp = 0.8
 Ki = 0.6
 Kd = 0.4

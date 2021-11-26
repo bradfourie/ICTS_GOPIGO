@@ -84,7 +84,6 @@ def server_listen():
     """
     while robot_loop:
         message = server.receive_message()
-        #print(message)
         process_user_commands(message)
 
 def distance_scanner():
