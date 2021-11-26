@@ -23,7 +23,7 @@ Kp = 0.8
 Ki = 0.6
 Kd = 0.4
 DESIRED_DISTANCE = 300
-THRESHOLD = 600
+THRESHOLD = 800
 SAMPLING_TIME = 0.1
 
 # Timer values
